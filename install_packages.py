@@ -13,7 +13,7 @@ import logging
 
 def check_arguments(file_name):
     """
-    Check script has been called correctly. If not, return syntax for using it and exits.
+    Check script XXXhas been called correctly. If not, return syntax for using it and exits.
     """
     if len(sys.argv) < 3:
         print(f"\nUsage: {file_name} [options]\n\
