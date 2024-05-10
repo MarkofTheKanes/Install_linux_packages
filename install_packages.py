@@ -19,7 +19,8 @@ def check_arguments(file_name):
         print(f"\nUsage: {file_name} [option]\n\n\
     -i - install all applications\n\
     -u - uninstall all applications\n\
-    -l - list installed applications\n\n\
+    -l - list installed applications\n\
+    -c - clean up unused packages\n\n\
 Example: {file_name} -i = install ALL packages")
         logging.info("No argument provided with '%s'. Exited script", file_name)
         sys.exit()
@@ -164,6 +165,11 @@ def main():
             ## Uninstall all packages
             pkg_cmd = "uninstall"
             #print(f"\nUninstalling all applications...")
+
+        case "-c":
+            ## Clean up unused  packages
+            pkg_cmd = "uninstall"
+            #print(f"\nUninstalling all applications...")
     
         case "-l":
             ## List installed packages
@@ -186,7 +192,7 @@ def main():
         ## Install SNAP packages
         pkg_type = "snap"
         packages_to_process = ["code --classic", "chromium-ffmpeg"]  # Add your SNAP package names here
-        #process_packages(pkg_type, packages_to_process, pkg_cmd)
+        process_packages(pkg_type, packages_to_process, pkg_cmd)
         
         ## Install FLATPAK packages
         pkg_type = "flatpak"
@@ -199,6 +205,7 @@ def main():
         packages_to_process = ["chromium-codecs-ffmpeg-extra", "curl", "terminator", 'gnome-tweaks', 'git-all', 'gh', 'autokey-gtk', 'nemo', 'clamav', 'clamtk']  # Add name of packages to install using apt
         process_packages(pkg_type, packages_to_process, pkg_cmd)
 
+    print(f"\nRun 'sudo snap install code --classic' to manually install VS Code")
     print(f"\n**** FINISHED *****")
 
 if __name__ == "__main__":
