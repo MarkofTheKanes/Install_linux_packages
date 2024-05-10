@@ -3,8 +3,7 @@
 # add support for installing .deb files
 # add support for apps requiring additional configs
 # Pull list of apps to process from a file
-# Fix checking issue with pkg_mg install check - stops checking if it
-# finds a package is missing
+# Fix checking issue with pkg_mg install check - stops checking if a package has not been installed
 
 import subprocess
 import os
@@ -20,7 +19,6 @@ def check_arguments(file_name):
     -i - install all applications\n\
     -u - uninstall all applications\n\
     -l - list installed applications\n\
-    -c - clean up unused packages\n\n\
 Example: {file_name} -i = install ALL packages")
         logging.info("No argument provided with '%s'. Exited script", file_name)
         sys.exit()
