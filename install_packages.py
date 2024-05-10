@@ -1,48 +1,46 @@
 # TO DO
-# check if snap and flatpak installed - install if not
+# check if packages already installed - install if not
 # check sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo has already been done
 # add support for installing .deb files
-# add option to install or uninstall
+# add option uninstall
 
-import subprocess
 import subprocess
 import os
 import sys
-import subprocess
 import logging
 
 def check_arguments(file_name):
     """
-    Check script XXXhas been called correctly. If not, return syntax for using it and exits.
+    Check script has been called correctly. If not, return syntax for using it and exits.
     """
-    if len(sys.argv) < 3:
-        print(f"\nUsage: {file_name} [options]\n\
-        -i - install applications\n\
-        -u - uninstall applications\n\
-        -s - (un)install snap packages only\n\
-        -f - (un)install flatpack packages only\n\
-        -a - (un)install all packages\n\
-        -l - list installed applications\n\
-        Example: {file_name} -i -s = install snap packages")
+    if len(sys.argv) == 1:
+        print(f"\nUsage: {file_name} [option]\n\n\
+    -i - install all applications\n\
+    -u - uninstall all applications\n\
+    -l - list installed applications\n\n\
+Example: {file_name} -i = install ALL packages")
         logging.info("No argument provided with '%s'. Exited script", file_name)
         sys.exit()
     else:
         option1 = sys.argv[1]
-        option2 = sys.argv[2]
-        return (option1, option2)
+        return (option1)
 
-def check_files_exists(filenames):
+def check_files_exists(src_filenames):
     """
     Check source files with apps to be installed exist. If not, exit with relevant error.
     """
+    print(f"\nChecking if files lising apps to install exist.\n")
+
     try:
-        for file_name in filenames:
-            print(f"file_name =",file_name)
+        for file_name in src_filenames:
             file_exists = os.path.exists(file_name)
-            print(f"File '{file_name}' found ok.\n")
+            if file_exists:
+                print(f"> Source apps file '{file_name}' found ok.")
+            else:
+                print(f"*** Source apps file '{file_name}' not found ***.")
     except:
-        print(f"File '{filenames}' not found.\n")
-        logging.info("File '%s' not found. Exited script", filenames)
+        print(f"File '{file_name}' not found.\n")
+        logging.info("*** Source apps file '%s' not found. Exited script.***", file_name)
         sys.exit()
 
 def check_pkgmgr_installed(pkgmgr_name):
@@ -54,72 +52,74 @@ def check_pkgmgr_installed(pkgmgr_name):
 
     Returns:
         bool: True if the package is installed, False otherwise.
+    
+    STATUS: needs fixing - if 1st package not installed, ignores checking others
     """
+    print(f"\nChecking if required package managers are installed.\n")
     try:
         for pkgname in pkgmgr_name:
             subprocess.run(['dpkg-query', '-l', pkgname], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if subprocess:
-                print(f"The package manager '{pkgname}' is installed.")
+                print(f"> Package manager '{pkgname}' is installed.")
         return True  # If the package is installed, dpkg-query will exit with status 0
     except subprocess.CalledProcessError:
-        print(f"The package manager'{pkgname}' is not installed.")
-        install_pkgmgr(pkgmgr_name)
+        print(f"*** Package manager '{pkgname}' is not installed.***")
+        install_pkgmgr(pkgname)
         return False  # If the package is not installed, dpkg-query will exit with a non-zero status
 
-def install_pkgmgr(pkg_mgrname):
+def install_pkgmgr(pkg_mgrname2):
     """
     Install package manager.
 
     Args:
-        pkg_mgrname (string): the name of the package manager to install
+        pkg_mgrname2 (string): the name of the package manager to install
     """
-    try:
-        for packagemgr in pkg_mgrname:
-            if packagemgr == "snap":
-                subprocess.run(['sudo', 'snap', 'install', packagemgr], check=True)
-            elif packagemgr == "flatpak":
-                print(f"Installing package Manager {packagemgr}.\n")
-                os.system('flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo')
-                subprocess.run(['sudo', 'apt', 'install', pkg_mgrname], check=True)
-                print(f"Package {packagemgr} installed successfully.")
-    except subprocess.CalledProcessError as e:
-            (f"Error: Failed to install package manager {packagemgr}. {e}")
+    print(f"\nInstalling missing package manager(s).\n") 
 
-def install_packages(pkg_type, packages):
+    try:
+        print(f"packagemgr =", pkg_mgrname2)
+        if pkg_mgrname2 == "flatpak":
+            print(f"Installing package Manager {pkg_mgrname2}.")
+            os.system('flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo')
+            subprocess.run(['sudo', 'apt', 'install', pkg_mgrname2, '-y'], check=True, shell=False)
+            subprocess.run(['sudo', 'apt', 'install', 'gnome-software-plugin-flatpak'], check=True, shell=False)
+            print(f">Package {pkg_mgrname2} installed successfully.")
+        elif pkg_mgrname2 == "nix":
+            subprocess.run(['sudo', 'apt', 'install', pkg_mgrname2, '-y'], check=True, shell=False)
+            print(f">Package {pkg_mgrname2} installed successfully.")
+        elif pkg_mgrname2 == "snap":
+            subprocess.run(['sudo', 'snap', 'install', pkg_mgrname2, '-y'], check=True, shell=False)
+            print(f">Package {pkg_mgrname2} installed successfully.")
+    except subprocess.CalledProcessError as e:
+            (f"Error: Failed to install package manager {pkg_mgrname2}. {e}")
+
+def process_packages(pckg_type, packages, pckg_cmd):
     """
-    Install required packages.
+    Process required packages.
 
     Args:
-        pkg_type (string): defines the package type to install and the command to run
+        pckg_type (string): defines the package type to (un)install and the command to run
         packages (list): List of package names to install.
+        pckg_cmd (string): command to run e.g. install or uninstall
     """
+    print(f"\nProcessing '{pckg_cmd}' application request.\n")
+    print(f"pckg_type = '{pckg_type}'\n")
+    print(f"packages = '{packages}'\n")
+    print(f"pckg_cmd = '{pckg_cmd}'\n")
+
     try:
         for package in packages:
-            if pkg_type == "snap":
-                subprocess.run(['sudo', 'snap', 'install', package], check=True)
-            elif pkg_type == "flatpak":
-                subprocess.run(['sudo', 'flatpak', 'install', 'flathub','-y', package], check=True)
+            if pckg_type == "snap":
+                subprocess.run(['sudo', 'snap', pckg_cmd, package,'-y'], check=True, shell=False)
+            elif pckg_type == "flatpak":
+                subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub','-y', package], check=True, shell=False)
+            elif pckg_type == "apt":
+                if pckg_cmd == "uninstall":
+                    pckg_cmd = "remove"
+                subprocess.run(['sudo', 'apt', pckg_cmd,'-y', package], check=True, shell=False)
             print(f"Package {package} installed successfully.")
     except subprocess.CalledProcessError as e:
-            (f"Error: Failed to install package {package}. {e}")
-
-def uninstall_packages(pkg_type, packages):
-    """
-    Uninstall required packages.
-
-    Args:
-        pkg_type (string): defines the package type to uninstall and the command to run
-        packages (list): List of package names to install.
-    """
-    try:
-        for package in packages:
-            if pkg_type == "snap":
-                subprocess.run(['sudo', 'snap', 'install', package], check=True)
-            elif pkg_type == "flatpak":
-                subprocess.run(['sudo', 'flatpak', 'install', 'flathub','-y', package], check=True)
-            print(f"Package {package} installed successfully.")
-    except subprocess.CalledProcessError as e:
-            (f"Error: Failed to install package {package}. {e}")
+            (f"Error: Failed to {pckg_cmd} package {package}. {e}")
 
 def list_packages(command):
     """
@@ -144,31 +144,57 @@ def main():
     script_name = os.path.basename(script_path)
 
     ## check user has included an argument when calling the script.
-    check_arguments(script_name)
+    option_selected = check_arguments(script_name)
 
     # check if source files listing apps to be installed
     # exist
-    source_file_names = ["snap_apps", "flatpak_apps"]
+    source_file_names = ["./snap_apps", "./flatpak_apps", "./other_apps"]
     check_files_exists(source_file_names)    
 
     ## check if package Managers are installed. If not, install them
-    pkgmgr_to_check = ["snap", "flatpak", "tester"]  # Add package manager names here
-    #pkgmgr_to_check = "snap2"  # Add package manager names here
+    #pkgmgr_to_check = ["snap", "flatpak", "apt", "tester"]
+    pkgmgr_to_check = ["nix", "snap", "flatpak", "apt"]  # Add package manager names here
     check_pkgmgr_installed(pkgmgr_to_check)
 
-    ## Install snap packages
-    pkg_type = "snap"
-    packages_to_install = ["slack", "package2", "package3"]  # Add your SNAP package names here
-    #install_packages(pkg_type, packages_to_install)
+    # 
+    match option_selected:
+        case "-i":
+            ## Install all packages
+            pkg_cmd = "install"
+            print(f"\nInstalling all applications...")
 
-    ## Install flatpak packages
-    pkg_type = "flatpak"
-    packages_to_install = ["slack", "package2", "package3"]  # Add your FLATPAK package names here
-    #install_packages(pkg_type, packages_to_install)
+        case "-u":
+            ## Uninstall all packages
+            print(f"\nUninstalling all applications...")
+            pkg_cmd = "uninstall"
     
-    ## List installed packages
-    commands_to_run = ["snap list", "flatpak list"]
-    #list_packages(commands_to_run)
+        case "-l":
+            ## List installed packages
+            print(f"\nListing installed applications...")
+            commands_to_run = ["snap list", "flatpak list", "apt list --manual-installed=true"]
+            list_packages(commands_to_run)
+    
+        case _:
+            ## List installed packages
+            commands_to_run = ["snap list", "flatpak list", "apt list --manual-installed=true"]           
+            
+    if option_selected == "-i" or option_selected == "-u":
+        ## Install SNAP packages
+        pkg_type = "snap"
+        packages_to_process = ["code --classic"]  # Add your SNAP package names here
+        #process_packages(pkg_type, packages_to_process, pkg_cmd)
+        
+        ## Install FLATPAK packages
+        pkg_type = "flatpak"
+        packages_to_process = ["one.ablaze.floorp", "org.gnome.DejaDup"]  # Add your FLATPAK package names here
+        process_packages(pkg_type, packages_to_process, pkg_cmd)
+        
+        ## Install with apt
+        pkg_type = "apt"
+        packages_to_process = ["chromium-codecs-ffmpeg-extra", "curl", "terminator"]  # Add name of packages to install using apt
+        process_packages(pkg_type, packages_to_process, pkg_cmd)
+
+    print(f"\n**** FINISHED *****")
 
 if __name__ == "__main__":
     main()
