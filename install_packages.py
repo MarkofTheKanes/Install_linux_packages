@@ -1,8 +1,9 @@
 # TO DO
 # check if packages already installed - install if not
-# check sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo has already been done
 # add support for installing .deb files
-# add option uninstall
+# Pull list of apps to process from 
+# Fix checking issue with pkg_mg install check - stops checking if it
+# finds a package is missing
 
 import subprocess
 import os
@@ -103,23 +104,30 @@ def process_packages(pckg_type, packages, pckg_cmd):
         pckg_cmd (string): command to run e.g. install or uninstall
     """
     print(f"\nProcessing '{pckg_cmd}' application request.\n")
-    print(f"pckg_type = '{pckg_type}'\n")
-    print(f"packages = '{packages}'\n")
-    print(f"pckg_cmd = '{pckg_cmd}'\n")
-
+    print(f">Packages Type = '{pckg_type}'.\n")
+    print(f">Packages = '{packages}'.\n")
     try:
         for package in packages:
             if pckg_type == "snap":
-                subprocess.run(['sudo', 'snap', pckg_cmd, package,'-y'], check=True, shell=False)
+                print(f"> Package = '{package}'")
+                subprocess.run(['sudo', 'snap', pckg_cmd, package,'-y'], check=True, shell=False, stdout=subprocess.DEVNULL)
+                print(f"> Processing '{pckg_cmd}' of package '{package}' using {pckg_type}'\n")
+                #subprocess.run(['sudo', 'snap', pckg_cmd, package,'-y'], check=True, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             elif pckg_type == "flatpak":
-                subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub','-y', package], check=True, shell=False)
+                print(f"> Package = '{package}'")
+                print(f"> Processing '{pckg_cmd}' of package '{packages}' using {pckg_type}'\n")
+                subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub',package, '-y', ], check=True, shell=False, stdout=subprocess.DEVNULL)
+                #subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub','-y', package], check=True, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             elif pckg_type == "apt":
                 if pckg_cmd == "uninstall":
                     pckg_cmd = "remove"
-                subprocess.run(['sudo', 'apt', pckg_cmd,'-y', package], check=True, shell=False)
-            print(f"Package {package} installed successfully.")
+                print(f"> Package = '{package}'")
+                print(f"> Processing '{pckg_cmd}' of package '{packages}' using {pckg_type}'\n")
+                subprocess.run(['sudo', 'apt', pckg_cmd,'-y', package], check=True, shell=False, stdout=subprocess.DEVNULL)
+                #subprocess.run(['sudo', 'apt', pckg_cmd,'-y', package], check=True, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print(f"The '{pckg_cmd}' command for package {package} has completed successully successfully.")
     except subprocess.CalledProcessError as e:
-            (f"Error: Failed to {pckg_cmd} package {package}. {e}")
+            (f"*** Error: Failed to {pckg_cmd} package {package}. {e} ***")
 
 def list_packages(command):
     """
@@ -145,28 +153,16 @@ def main():
 
     ## check user has included an argument when calling the script.
     option_selected = check_arguments(script_name)
-
-    # check if source files listing apps to be installed
-    # exist
-    source_file_names = ["./snap_apps", "./flatpak_apps", "./other_apps"]
-    check_files_exists(source_file_names)    
-
-    ## check if package Managers are installed. If not, install them
-    #pkgmgr_to_check = ["snap", "flatpak", "apt", "tester"]
-    pkgmgr_to_check = ["nix", "snap", "flatpak", "apt"]  # Add package manager names here
-    check_pkgmgr_installed(pkgmgr_to_check)
-
-    # 
     match option_selected:
         case "-i":
             ## Install all packages
             pkg_cmd = "install"
-            print(f"\nInstalling all applications...")
+            #print(f"\nInstalling all applications...")
 
         case "-u":
             ## Uninstall all packages
-            print(f"\nUninstalling all applications...")
             pkg_cmd = "uninstall"
+            #print(f"\nUninstalling all applications...")
     
         case "-l":
             ## List installed packages
@@ -177,16 +173,24 @@ def main():
         case _:
             ## List installed packages
             commands_to_run = ["snap list", "flatpak list", "apt list --manual-installed=true"]           
-            
     if option_selected == "-i" or option_selected == "-u":
+        # check if source files listing apps to be installedexist
+        source_file_names = ["./snap_apps", "./flatpak_apps", "./other_apps"]
+        check_files_exists(source_file_names)    
+
+        ## check if package Managers are installed. If not, install them
+        pkgmgr_to_check = ["nix", "snap", "flatpak", "apt"]  # Add package manager names here
+        check_pkgmgr_installed(pkgmgr_to_check)
+        
         ## Install SNAP packages
         pkg_type = "snap"
-        packages_to_process = ["code --classic"]  # Add your SNAP package names here
+        packages_to_process = ["code --classic","chromium-ffmpeg"]  # Add your SNAP package names here
         #process_packages(pkg_type, packages_to_process, pkg_cmd)
         
         ## Install FLATPAK packages
         pkg_type = "flatpak"
-        packages_to_process = ["one.ablaze.floorp", "org.gnome.DejaDup"]  # Add your FLATPAK package names here
+        #packages_to_process = ["one.ablaze.floorp", "org.gnome.DejaDup"]  # Add your FLATPAK package names here
+        packages_to_process = ["one.ablaze.floorp"]  
         process_packages(pkg_type, packages_to_process, pkg_cmd)
         
         ## Install with apt
