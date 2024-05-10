@@ -1,7 +1,8 @@
 # TO DO
 # check if packages already installed - install if not
 # add support for installing .deb files
-# Pull list of apps to process from 
+# add support for apps requiring additional configs
+# Pull list of apps to process from a file
 # Fix checking issue with pkg_mg install check - stops checking if it
 # finds a package is missing
 
@@ -103,31 +104,31 @@ def process_packages(pckg_type, packages, pckg_cmd):
         packages (list): List of package names to install.
         pckg_cmd (string): command to run e.g. install or uninstall
     """
-    print(f"\nProcessing '{pckg_cmd}' application request.\n")
-    print(f">Packages Type = '{pckg_type}'.\n")
+    print(f"\nProcessing '{pckg_cmd}' application request.")
+    print(f">Packages Type = '{pckg_type}'.")
     print(f">Packages = '{packages}'.\n")
     try:
-        for package in packages:
+        for pkg_name in packages:
             if pckg_type == "snap":
-                print(f"> Package = '{package}'")
-                subprocess.run(['sudo', 'snap', pckg_cmd, package,'-y'], check=True, shell=False, stdout=subprocess.DEVNULL)
-                print(f"> Processing '{pckg_cmd}' of package '{package}' using {pckg_type}'\n")
+                print(f"> Package = '{pkg_name}'")
+                subprocess.run(['sudo', 'snap', pckg_cmd, pkg_name,'-y'], check=True, shell=False, stderr=subprocess.DEVNULL)
+                print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using {pckg_type}'\n")
                 #subprocess.run(['sudo', 'snap', pckg_cmd, package,'-y'], check=True, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             elif pckg_type == "flatpak":
-                print(f"> Package = '{package}'")
+                print(f"> Package = '{pkg_name}'")
                 print(f"> Processing '{pckg_cmd}' of package '{packages}' using {pckg_type}'\n")
-                subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub',package, '-y', ], check=True, shell=False, stdout=subprocess.DEVNULL)
+                subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub',pkg_name, '-y', ], check=True, shell=False, stderr=subprocess.DEVNULL)
                 #subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub','-y', package], check=True, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             elif pckg_type == "apt":
                 if pckg_cmd == "uninstall":
                     pckg_cmd = "remove"
-                print(f"> Package = '{package}'")
+                print(f"> Package = '{pkg_name}'")
                 print(f"> Processing '{pckg_cmd}' of package '{packages}' using {pckg_type}'\n")
-                subprocess.run(['sudo', 'apt', pckg_cmd,'-y', package], check=True, shell=False, stdout=subprocess.DEVNULL)
+                subprocess.run(['sudo', 'apt', pckg_cmd,'-y', pkg_name], check=True, shell=False, stderr=subprocess.DEVNULL)
                 #subprocess.run(['sudo', 'apt', pckg_cmd,'-y', package], check=True, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print(f"The '{pckg_cmd}' command for package {package} has completed successully successfully.")
+            print(f"The '{pckg_cmd}' command for package {pkg_name} has completed successully successfully.")
     except subprocess.CalledProcessError as e:
-            (f"*** Error: Failed to {pckg_cmd} package {package}. {e} ***")
+            (f"*** Error: Failed to {pckg_cmd} package {pkg_name}. {e} ***")
 
 def list_packages(command):
     """
@@ -184,18 +185,18 @@ def main():
         
         ## Install SNAP packages
         pkg_type = "snap"
-        packages_to_process = ["code --classic","chromium-ffmpeg"]  # Add your SNAP package names here
+        packages_to_process = ["code --classic", "chromium-ffmpeg"]  # Add your SNAP package names here
         #process_packages(pkg_type, packages_to_process, pkg_cmd)
         
         ## Install FLATPAK packages
         pkg_type = "flatpak"
-        #packages_to_process = ["one.ablaze.floorp", "org.gnome.DejaDup"]  # Add your FLATPAK package names here
-        packages_to_process = ["one.ablaze.floorp"]  
+        # Add your FLATPAK package names here
+        packages_to_process = ['one.ablaze.floorp', 'org.gnome.DejaDup', 'com.brave.Browser', 'net.giuspen.cherrytree', 'org.gnome.DejaDup', 'com.mattjakeman.ExtensionManager', 'org.keepassxc.KeePassXC', 'org.signal.Signal', 'us.zoom.Zoom', 'org.gnome.SimpleScan', 'org.libreoffice.LibreOffice']  
         process_packages(pkg_type, packages_to_process, pkg_cmd)
         
         ## Install with apt
         pkg_type = "apt"
-        packages_to_process = ["chromium-codecs-ffmpeg-extra", "curl", "terminator"]  # Add name of packages to install using apt
+        packages_to_process = ["chromium-codecs-ffmpeg-extra", "curl", "terminator", 'gnome-tweaks', 'git-all', 'gh', 'autokey-gtk', 'nemo', 'clamav', 'clamtk']  # Add name of packages to install using apt
         process_packages(pkg_type, packages_to_process, pkg_cmd)
 
     print(f"\n**** FINISHED *****")
