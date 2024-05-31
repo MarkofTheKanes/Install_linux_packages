@@ -1,5 +1,4 @@
 # TO DO
-# check if packages already installed - install if not
 # add support for installing .deb files
 #   .debs - Wave terminal emulator
 # add support for apps requiring additional configs
