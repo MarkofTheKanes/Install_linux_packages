@@ -23,7 +23,7 @@ def check_arguments(file_name):
     -i - install all applications\n\
     -u - uninstall all applications\n\
     -l - list installed applications\n\
-Example: {file_name} -i = install ALL packages")
+Example: {file_name} -i = install ALL packages\n")
         logging.info(
             "No argument provided with '%s'. Exited script", file_name)
         sys.exit()
@@ -218,19 +218,20 @@ def main():
 
         # check if package Managers are installed. If not, install them
         # Add package manager names here
-        pkgmgr_to_check = ["nix", "snap", "flatpak", "apt"]
+        pkgmgr_to_check = ["snap", "flatpak", "apt"]
         check_pkgmgr_installed(pkgmgr_to_check)
 
         # Process SNAP packages
         pkg_type = "snap"
         # Add your SNAP package names here
-        packages_to_process = ["code --classic", "chromium-ffmpeg"]
+        #packages_to_process = ["code --classic", "chromium-ffmpeg"]
+        packages_to_process = ["chromium-ffmpeg"]
         process_packages(pkg_type, packages_to_process, pkg_cmd)
 
         # Process FLATPAK packages
         pkg_type = "flatpak"
         # Add your FLATPAK package names here
-        packages_to_process = ['one.ablaze.floorp', 'org.gnome.DejaDup', 'net.giuspen.cherrytree', 'org.gnome.DejaDup', 'com.mattjakeman.ExtensionManager', 'org.keepassxc.KeePassXC', 'org.signal.Signal', 'us.zoom.Zoom', 'org.gnome.SimpleScan', 'org.libreoffice.LibreOffice']
+        packages_to_process = ['one.ablaze.floorp', 'org.gnome.DejaDup', 'net.giuspen.cherrytree', 'org.gnome.DejaDup', 'com.mattjakeman.ExtensionManager', 'org.signal.Signal', 'us.zoom.Zoom', 'org.gnome.SimpleScan', 'org.libreoffice.LibreOffice', 'org.standardnotes.standardnotes']
         process_packages(pkg_type, packages_to_process, pkg_cmd)
 
         # Process with apt
