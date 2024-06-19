@@ -211,7 +211,9 @@ def process_brave(pckg_cmd):
     try:
         print(f"> Processing '{pckg_cmd}' for package '{pkg_name}' using '{pckg_type}'\n")
         subprocess.run(['sudo', 'curl', '-fsSLo', '/usr/share/keyrings/brave-browser-archive-keyring.gpg', 'https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg'], check=True, shell=False, stderr=subprocess.DEVNULL)
-        subprocess.run(['echo', '"deb"', '[signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg]', 'https://brave-browser-apt-release.s3.brave.com/', 'stable', 'main"|sudo', 'tee', '/etc/apt/sources.list.d/brave-browser-release.list' ], check=True, shell=False, stderr=subprocess.DEVNULL)
+
+        subprocess.run(['echo', '"deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"', '|sudo', 'tee', '/etc/apt/sources.list.d/brave-browser-release.list' ], check=True, shell=False, stderr=subprocess.DEVNULL)
+        
         subprocess.run(['sudo', 'apt', pckg_cmd, '-y', pkg_name], check=True, shell=False, stderr=subprocess.DEVNULL)
 
         print(f"The '{pckg_cmd}' command for package '{pkg_name}' has completed successfully.")
