@@ -115,7 +115,34 @@ def install_pkgmgr(pkg_mgrname2):
         (f"Error: Failed to install package manager {pkg_mgrname2}. {e}")
 
 
-def process_packages(pckg_type, packages, pckg_cmd):
+def process_snap_packages(pckg_type, packages, pckg_cmd):
+    """
+    Process required packages.
+
+    Args:
+        pckg_type (string): defines the package type to (un)install and
+                            the command to run
+        packages (list): List of package names to install.
+        pckg_cmd (string): command to run e.g. install or uninstall
+    """
+    print(f"\nProcessing '{pckg_cmd}' application request.")
+    print(f">Packages Type = '{pckg_type}'.")
+    print(f">Packages = '{packages}'.\n")
+    if pckg_cmd == "uninstall":
+        pckg_cmd = "remove"
+    try:
+        for pkg_name in packages:
+            # Process Snap packages
+  
+            print(f"> Package to be processed = '{pkg_name}'")
+            subprocess.run(['sudo', 'snap', pckg_cmd, pkg_name], check=True, shell=False, stderr=subprocess.DEVNULL)
+            print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using '{pckg_type}'\n")
+            print(f"The '{pckg_cmd}' command for package '{pkg_name}' has completed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"*** Error: Failed to '{pckg_cmd}' package {pkg_name}. {e} ***")
+
+
+def process_flatpak_packages(pckg_type, packages, pckg_cmd):
     """
     Process required packages.
 
@@ -130,33 +157,66 @@ def process_packages(pckg_type, packages, pckg_cmd):
     print(f">Packages = '{packages}'.\n")
     try:
         for pkg_name in packages:
-            # Process Snap packages using SNAP
-            if pckg_type == "snap":
+            # Install FLATPAK packages
+            if pckg_cmd == "install":
                 print(f"> Package = '{pkg_name}'")
-                subprocess.run(['sudo', 'snap', pckg_cmd, pkg_name, '-y'],
-                               check=True, shell=False, stderr=subprocess.DEVNULL)
-                print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using {pckg_type}'\n")
-            # Install FLATPAK packages using flatpak
-            elif pckg_type == "flatpak" and pckg_cmd == "Install":
-                print(f"> Package = '{pkg_name}'")
-                print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using {pckg_type}'\n")
+                print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using '{pckg_type}'\n")
                 subprocess.run(['sudo', 'flatpak', pckg_cmd, 'flathub', pkg_name, '-y'], check=True, shell=False, stderr=subprocess.DEVNULL)
-            # Uninstall FLATPAK packages using flatpak
-            elif pckg_type == "flatpak" and pckg_cmd == "uninstall":
+            # Uninstall FLATPAK packages
+            elif pckg_cmd == "uninstall":
                 print(f"> Package = '{pkg_name}'")
-                print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using {pckg_type}'\n")
+                print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using '{pckg_type}'\n")
                 subprocess.run(['sudo', 'flatpak', pckg_cmd, pkg_name, '-y', ], check=True, shell=False, stderr=subprocess.DEVNULL)
-            elif pckg_type == "apt":
-                if pckg_cmd == "uninstall":
-                    pckg_cmd = "remove"
-                print(f"> Package = '{pkg_name}'")
-                print(f"> Processing '{pckg_cmd}' of package '{packages}' using {pckg_type}'\n")
-                subprocess.run(['sudo', 'apt', pckg_cmd, '-y', pkg_name],
-                               check=True, shell=False, stderr=subprocess.DEVNULL)
-            print(f"The '{pckg_cmd}' command for package {
-                  pkg_name} has completed successully successfully.")
+                print(f"The '{pckg_cmd}' command for package '{pkg_name}' has completed successfully.")
     except subprocess.CalledProcessError as e:
-        (f"*** Error: Failed to {pckg_cmd} package {pkg_name}. {e} ***")
+        print(f"*** Error: Failed to {pckg_cmd} package {pkg_name}. {e} ***")
+
+
+def process_apt_packages(pckg_type, packages, pckg_cmd):
+    """
+    Process required packages.
+
+    Args:
+        pckg_type (string): defines the package type to (un)install and
+                            the command to run
+        packages (list): List of package names to install.
+        pckg_cmd (string): command to run e.g. install or purge
+    """
+    if pckg_cmd == "uninstall":
+        pckg_cmd = "purge"
+    print(f"\nProcessing '{pckg_cmd}' application request.")
+    print(f">Packages Type = '{pckg_type}'.")
+    print(f">Packages = '{packages}'.\n")
+    try:
+        for pkg_name in packages:
+            print(f"> Package = '{pkg_name}'")
+            print(f"> Processing '{pckg_cmd}' of package '{pkg_name}' using '{pckg_type}'\n")
+            subprocess.run(['sudo', 'apt', pckg_cmd, '-y', pkg_name], check=True, shell=False, stderr=subprocess.DEVNULL)
+            print(f"The '{pckg_cmd}' command for package '{pkg_name}' has completed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"*** Error: Failed to {pckg_cmd} package {pkg_name}. {e} ***")
+
+
+def process_brave(pckg_cmd):
+    """
+    Process required packages.
+
+    Args:
+        pckg_cmd (string): command to run e.g. install or purge
+    """
+    pkg_name = "brave-browser"
+    pckg_type = "apt"
+    if pckg_cmd == "uninstall":
+        pckg_cmd = "purge" 
+    try:
+        print(f"> Processing '{pckg_cmd}' for package '{pkg_name}' using '{pckg_type}'\n")
+        subprocess.run(['sudo', 'curl', '-fsSLo', '/usr/share/keyrings/brave-browser-archive-keyring.gpg', 'https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg'], check=True, shell=False, stderr=subprocess.DEVNULL)
+        subprocess.run(['echo', '"deb"', '[signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg]', 'https://brave-browser-apt-release.s3.brave.com/', 'stable', 'main"|sudo', 'tee', '/etc/apt/sources.list.d/brave-browser-release.list' ], check=True, shell=False, stderr=subprocess.DEVNULL)
+        subprocess.run(['sudo', 'apt', pckg_cmd, '-y', pkg_name], check=True, shell=False, stderr=subprocess.DEVNULL)
+
+        print(f"The '{pckg_cmd}' command for package '{pkg_name}' has completed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"*** Error: Failed to {pckg_cmd} package {pkg_name}. {e} ***")
 
 
 def list_packages(command):
@@ -196,7 +256,7 @@ def main():
             # print(f"\nUninstalling all applications...")
 
         case "-c":
-            # Clean up unused  packages
+            # Clean up unused  packages - TO DO
             pkg_cmd = "uninstall"
             # print(f"\nUninstalling all applications...")
 
@@ -225,20 +285,27 @@ def main():
         pkg_type = "snap"
         # Add your SNAP package names here
         #packages_to_process = ["code --classic", "chromium-ffmpeg"]
-        packages_to_process = ["chromium-ffmpeg"]
-        process_packages(pkg_type, packages_to_process, pkg_cmd)
+        packages_to_process = ["chromium-ffmpeg","standard-notes"]
+        #process_snap_packages(pkg_type, packages_to_process, pkg_cmd)
 
         # Process FLATPAK packages
         pkg_type = "flatpak"
         # Add your FLATPAK package names here
-        packages_to_process = ['one.ablaze.floorp', 'org.gnome.DejaDup', 'net.giuspen.cherrytree', 'org.gnome.DejaDup', 'com.mattjakeman.ExtensionManager', 'org.signal.Signal', 'us.zoom.Zoom', 'org.gnome.SimpleScan', 'org.libreoffice.LibreOffice', 'org.standardnotes.standardnotes']
-        process_packages(pkg_type, packages_to_process, pkg_cmd)
+        packages_to_process = ['one.ablaze.floorp', 'org.gnome.DejaDup', 'net.giuspen.cherrytree','com.mattjakeman.ExtensionManager', 'org.signal.Signal', 'us.zoom.Zoom', 'org.gnome.SimpleScan', 'org.libreoffice.LibreOffice']
+        #process_flatpak_packages(pkg_type, packages_to_process, pkg_cmd)
 
         # Process with apt
         pkg_type = "apt"
         # Add name of packages to be processed using apt here
-        packages_to_process = ['brave-browser', "chromium-codecs-ffmpeg-extra", "curl", "terminator", 'gnome-tweaks', 'git-all', 'gh', 'autokey-gtk', 'nemo', 'clamav', 'clamtk', 'ubuntu-restricted-extras', 'tlp']
-        process_packages(pkg_type, packages_to_process, pkg_cmd)
+        # Note: curl needs to be installed before Brave
+        packages_to_process = ["chromium-codecs-ffmpeg-extra", "curl", "terminator", 'gnome-tweaks', 'git-all', 'gh', 'autokey-gtk', 'nemo','ubuntu-restricted-extras', 'tlp']
+        #packages_to_process = ['brave-browser', "chromium-codecs-ffmpeg-extra", "curl", "terminator", 'gnome-tweaks', 'git-all', 'gh', 'autokey-gtk', 'nemo', 'clamav', 'clamtk', 'ubuntu-restricted-extras', 'tlp']
+        #process_apt_packages(pkg_type, packages_to_process, pkg_cmd)
+
+        # Special installs 
+        ## Brave Browser
+        process_brave(pkg_cmd)
+        
 
     print("\nRun 'sudo snap install code --classic' to manually install VS Code")
     print("\n**** FINISHED *****")
